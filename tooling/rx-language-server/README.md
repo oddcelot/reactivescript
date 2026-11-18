@@ -98,8 +98,9 @@ language server with the command
 map the file name pattern `*.rx` to it, and add the `tooling/vscode-rx`
 folder under Settings › Editor › TextMate Bundles for highlighting.
 
-**Zed** needs an extension of its own (a Zed extension declares the language
-and starts the server); there isn't one yet.
+**Zed**: the extension in [`../zed-rx`](../zed-rx), which installs this server
+from npm and highlights with the tree-sitter grammar in
+[`../tree-sitter-rx`](../tree-sitter-rx).
 
 The `/path/to/reactivescript` paths are a checkout of this repository; with
 the npm package, the command is `npx @reactivescript/language-server --stdio`
