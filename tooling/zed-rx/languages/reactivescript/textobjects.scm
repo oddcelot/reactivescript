@@ -1,0 +1,180 @@
+; Zed's tsx/textobjects.scm, with .rx's declarations added at the end.
+
+(comment)+ @comment.around
+
+(function_declaration
+  body: (_
+    "{"
+    (_)* @function.inside
+    "}")) @function.around
+
+(method_definition
+  body: (_
+    "{"
+    (_)* @function.inside
+    "}")) @function.around
+
+(function_expression
+  body: (_
+    "{"
+    (_)* @function.inside
+    "}")) @function.around
+
+((arrow_function
+  body: (statement_block
+    "{"
+    (_)* @function.inside
+    "}")) @function.around
+  (#not-has-parent? @function.around variable_declarator))
+
+; Arrow function in variable declaration - capture the full declaration
+([
+  (lexical_declaration
+    (variable_declarator
+      value: (arrow_function
+        body: (statement_block
+          "{"
+          (_)* @function.inside
+          "}"))))
+  (variable_declaration
+    (variable_declarator
+      value: (arrow_function
+        body: (statement_block
+          "{"
+          (_)* @function.inside
+          "}"))))
+]) @function.around
+
+; Arrow function in variable declaration (expression body fallback)
+([
+  (lexical_declaration
+    (variable_declarator
+      value: (arrow_function
+        body: (_) @function.inside)))
+  (variable_declaration
+    (variable_declarator
+      value: (arrow_function
+        body: (_) @function.inside)))
+]) @function.around
+
+; Catch-all for arrow functions in other contexts (callbacks, etc.)
+((arrow_function
+  body: (_) @function.inside) @function.around
+  (#not-has-parent? @function.around variable_declarator))
+
+(function_signature) @function.around
+
+(generator_function
+  body: (_
+    "{"
+    (_)* @function.inside
+    "}")) @function.around
+
+(generator_function_declaration
+  body: (_
+    "{"
+    (_)* @function.inside
+    "}")) @function.around
+
+(class_declaration
+  body: (_
+    "{"
+    [
+      (_)
+      ";"?
+    ]* @class.inside
+    "}")) @class.around
+
+(class
+  body: (_
+    "{"
+    (_)* @class.inside
+    "}")) @class.around
+
+(interface_declaration
+  body: (_
+    "{"
+    [
+      (_)
+      ";"?
+    ]* @class.inside
+    "}")) @class.around
+
+(enum_declaration
+  body: (_
+    "{"
+    [
+      (_)
+      ","?
+    ]* @class.inside
+    "}")) @class.around
+
+(ambient_declaration
+  (module
+    body: (_
+      "{"
+      [
+        (_)
+        ";"?
+      ]* @class.inside
+      "}"))) @class.around
+
+(internal_module
+  body: (_
+    "{"
+    [
+      (_)
+      ";"?
+    ]* @class.inside
+    "}")) @class.around
+
+(type_alias_declaration) @class.around
+
+; ---- ReactiveScript
+
+(fn_declaration
+  body: (fn_body
+    "{"
+    (_)* @function.inside
+    "}")) @function.around
+
+(fn_declaration
+  "=>"
+  body: (_) @function.inside) @function.around
+
+(fn_signature) @function.around
+
+(server_function_declaration
+  body: (_
+    "{"
+    (_)* @function.inside
+    "}")) @function.around
+
+(action_declaration
+  body: (_
+    "{"
+    (_)* @function.inside
+    "}")) @function.around
+
+(effect_declaration
+  body: (_
+    "{"
+    (_)* @function.inside
+    "}")) @function.around
+
+(component_declaration
+  body: (_
+    "{"
+    (_)* @function.inside
+    "}")) @function.around
+
+(fn_expression
+  body: (_) @function.inside) @function.around
+
+(server_fn_expression
+  body: (_
+    "{"
+    (_)* @function.inside
+    "}")) @function.around
+
+(error_declaration) @class.around
