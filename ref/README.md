@@ -13,7 +13,8 @@ Solid comes from its `main` branch (where `next` was merged), built from source 
 repository (`../solid-next`), builds `@solidjs/signals`, `solid-js`,
 `@solidjs/web`, `@solidjs/universal` and the native `@solidjs/compiler`
 (pnpm and a Rust toolchain), and `ref/package.json` links them
-(`--latest` moves the pin to `main`'s HEAD). Views are JSX that
+(`--latest` moves the pin to `main`'s HEAD, or to another branch's with
+`SOLID_BRANCH=next`). Views are JSX that
 `@solidjs/compiler` lowers (`compile/jsx.ts`): `universal` over a string-tree
 renderer for the compiled runner, `ssr` and `dom` (hydratable) for the server
 runner.
