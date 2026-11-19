@@ -1,10 +1,10 @@
 #!/bin/sh
-# ref/ runs on Solid 2.0 built from source — `main`, where the `next` branch the async rules come from was merged — at
-# the commit pinned in ref/SOLID_NEXT. The checkout lives beside this repository (../solid-next), or at $SOLID_NEXT.
+# ref/ runs on Solid 2.0 built from source, at the commit pinned in ref/SOLID_NEXT. The checkout lives beside this
+# repository (../solid-next), or at $SOLID_NEXT.
 #   sh ref/scripts/solid-next.sh            check out the pinned commit and build what ref/ links
 #   sh ref/scripts/solid-next.sh --latest   move the pin to main's HEAD first
 # The pin is fetched by its hash, so it builds whichever branch it is on. $SOLID_BRANCH (default main) is the branch a
-# new checkout starts on and --latest follows: `SOLID_BRANCH=next sh ref/scripts/solid-next.sh --latest`.
+# new checkout starts on and --latest follows: `SOLID_BRANCH=<branch> sh ref/scripts/solid-next.sh --latest`.
 set -e
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 DIR=${SOLID_NEXT:-$HERE/../../solid-next}
