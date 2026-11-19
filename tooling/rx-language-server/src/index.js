@@ -99,7 +99,49 @@ function rxDiagnostics() {
   };
 }
 
+/** TypeScript's hover, shortened where it says more than a reader wants. An HTML tag is a property of Solid's JSX
+ *  types, `(property) JSX.HTMLElementTags.p: JSX.HTMLAttributes<HTMLParagraphElement> & …`: it is shown as the tag and
+ *  its element's interface. A `@url` tag is a link under its page's name, the documentation's `MDN Reference`. */
+function shortHover(markdown) {
+  const urls = [];
+  let text = markdown.replace(/^\*@url\* — (\S+)[ \t]*$\n?/gm, (_, url) => (urls.push(url), "")).replace(/\n{3,}/g, "\n\n").trimEnd();
+  const tag = /^```typescript\n\(property\) JSX\.(?:HTML|SVG|MathML)\w*Tags\.(?:"([^"\n]+)"|([\w$]+)): [^\n]*?<(\w+)>[^\n]*\n```/.exec(text);
+  let named;
+  if (tag) {
+    const [whole, quoted, plain, element] = tag;
+    named = urls.findIndex(url => url.endsWith(`/${element}`));
+    const link = named < 0 ? `\`${element}\`` : `[\`${element}\`](${urls[named]})`;
+    text = `\`<${quoted ?? plain}>\` · ${link}${text.slice(whole.length)}`;
+  }
+  const links = urls.filter((_, i) => i !== named).map((url, i) => {
+    const mdn = /^https:\/\/developer\.mozilla\.org\//.test(url);
+    const last = decodeURIComponent(url.replace(/[#?].*$/, "").replace(/\/+$/, "").split("/").pop() ?? url);
+    return `[${mdn && i === 0 ? "MDN Reference" : last}](${url})`;
+  });
+  return links.length ? `${text}\n\n${links.join(" · ")}` : text;
+}
+
+/** The services, with their hovers shortened (`shortHover`). */
+function withShortHovers(services) {
+  return services.map(service => ({
+    ...service,
+    create(context, ...rest) {
+      const instance = service.create(context, ...rest);
+      if (!instance.provideHover) return instance;
+      const provideHover = instance.provideHover.bind(instance);
+      return {
+        ...instance,
+        async provideHover(...args) {
+          const hover = await provideHover(...args);
+          if (hover?.contents?.kind === "markdown") hover.contents.value = shortHover(hover.contents.value);
+          return hover;
+        },
+      };
+    },
+  }));
+}
+
 /** Every `.rx` module analyzed so far, with its last analysis (the command line reports their crate diagnostics). */
 const analyses = () => [...cache].filter(([f]) => isModule(f)).map(([file, { result }]) => ({ file, result }));
 
-module.exports = { rxLanguagePlugin, rxDiagnostics, analysis, analyses, guideUrl };
+module.exports = { rxLanguagePlugin, rxDiagnostics, shortHover, withShortHovers, analysis, analyses, guideUrl };
