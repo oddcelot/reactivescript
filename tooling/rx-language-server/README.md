@@ -7,6 +7,10 @@ go to definition, references, rename, completion and type errors on the
 projection, and Volar maps the answers back. The crate's own diagnostics (parse
 errors, else the checker's, each with its rule) are a second service.
 
+A hover is TypeScript's, shortened in two places (`shortHover`): an HTML tag
+shows as the tag and its element's interface instead of its property in Solid's
+JSX types, and a `@url` tag is a link (`MDN Reference`) instead of a bare URL.
+
 - `src/rxc.js` asks the crate for a file's analysis, with the editor's unsaved
   text as overlays: its WebAssembly build in process (`src/wasm.rs`; one build
   for every platform, about a millisecond a file once loaded), or, when `RXC`
