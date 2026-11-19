@@ -526,6 +526,10 @@
       {
         "type": "readonly_type",
         "named": true
+      },
+      {
+        "type": "ref_type",
+        "named": true
       }
     ]
   },
@@ -3808,6 +3812,18 @@
       "required": true,
       "types": [
         {
+          "type": "array",
+          "named": true
+        },
+        {
+          "type": "false",
+          "named": true
+        },
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
           "type": "jsx_element",
           "named": true
         },
@@ -3824,11 +3840,35 @@
           "named": true
         },
         {
+          "type": "null",
+          "named": true
+        },
+        {
+          "type": "number",
+          "named": true
+        },
+        {
+          "type": "parenthesized_expression",
+          "named": true
+        },
+        {
           "type": "property_identifier",
           "named": true
         },
         {
           "type": "string",
+          "named": true
+        },
+        {
+          "type": "template_string",
+          "named": true
+        },
+        {
+          "type": "true",
+          "named": true
+        },
+        {
+          "type": "undefined",
           "named": true
         }
       ]
@@ -3905,6 +3945,10 @@
         },
         {
           "type": "jsx_text",
+          "named": true
+        },
+        {
+          "type": "style_element",
           "named": true
         }
       ]
@@ -5452,6 +5496,25 @@
       "multiple": false,
       "required": true,
       "types": [
+        {
+          "type": "type",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "ref_type",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "ref_modifier",
+          "named": true
+        },
         {
           "type": "type",
           "named": true

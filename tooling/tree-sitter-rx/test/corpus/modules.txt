@@ -240,3 +240,86 @@ export pure fn counter(ref start: number): number instantiates
             (predefined_type))))
       return_type: (type_annotation
         (predefined_type)))))
+
+========================================
+A default import named server or client
+========================================
+
+import server from "./x"
+import client, { a } from "./api"
+import server { b } from "./y"
+
+---
+
+(program
+  (import_statement
+    (import_clause
+      (identifier))
+    (string
+      (string_fragment)))
+  (import_statement
+    (import_clause
+      (identifier)
+      (named_imports
+        (import_specifier
+          (identifier))))
+    (string
+      (string_fragment)))
+  (import_statement
+    (side)
+    (import_clause
+      (named_imports
+        (import_specifier
+          (identifier))))
+    (string
+      (string_fragment))))
+
+========================================
+A signature that returns an accessor
+========================================
+
+export pure fn createDebounced(ref source: string, ms: number): ref string
+export pure fn createToggle(initial: boolean): [ref boolean, (v: boolean) => void]
+
+---
+
+(program
+  (export_statement
+    (fn_signature
+      (pure)
+      (identifier)
+      (formal_parameters
+        (required_parameter
+          (ref_modifier)
+          (identifier)
+          (type_annotation
+            (predefined_type)))
+        (required_parameter
+          (identifier)
+          (type_annotation
+            (predefined_type))))
+      (type_annotation
+        (ref_type
+          (ref_modifier)
+          (predefined_type)))))
+  (export_statement
+    (fn_signature
+      (pure)
+      (identifier)
+      (formal_parameters
+        (required_parameter
+          (identifier)
+          (type_annotation
+            (predefined_type))))
+      (type_annotation
+        (tuple_type
+          (ref_type
+            (ref_modifier)
+            (predefined_type))
+          (function_type
+            (formal_parameters
+              (required_parameter
+                (identifier)
+                (type_annotation
+                  (predefined_type))))
+            (predefined_type)))))))

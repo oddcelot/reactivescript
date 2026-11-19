@@ -284,3 +284,22 @@ styles = <style>.a { color: red }</style>
       (identifier)
       (raw_text)
       (identifier))))
+
+========================================
+A chain of catches folds left
+========================================
+
+x = a catch => b catch (e: NotFound) => c
+
+---
+
+(program
+  (equation
+    (identifier)
+    (catch_expression
+      (catch_expression
+        (identifier)
+        (identifier))
+      (identifier)
+      (type_identifier)
+      (identifier))))

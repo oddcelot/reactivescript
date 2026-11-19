@@ -203,8 +203,9 @@
 (type_identifier) @type
 (predefined_type) @type.builtin
 
-((identifier) @type
- (#match? @type "^[A-Z]"))
+; upstream's `((identifier) @type (#match? @type "^[A-Z]"))` is left out: it comes after @constructor and @constant, so
+; with later patterns winning it would make every capitalised name (a constant, an error's constructor, a component's
+; tag) a type
 
 (type_arguments
   "<" @punctuation.bracket

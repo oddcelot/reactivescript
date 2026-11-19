@@ -269,3 +269,76 @@ action f() {
       (write_statement
         target: (identifier)
         value: (number)))))
+
+========================================
+Keywords, use targets and calls back to back on one line
+========================================
+
+action go() {
+  a := 1 guess b := 2 refresh rows
+  a := b use theme := 2
+  foo() bar(1).baz()
+  if (c) x := 1 else y := 2
+  a := 1 xs["]"] := 2
+  return foo(1)
+}
+
+---
+
+(program
+  (action_declaration
+    (identifier)
+    (formal_parameters)
+    (statement_block
+      (write_statement
+        (identifier)
+        (number))
+      (guess_statement
+        (identifier)
+        (number))
+      (refresh_statement
+        (identifier))
+      (write_statement
+        (identifier)
+        (identifier))
+      (write_statement
+        (use_expression
+          (identifier))
+        (number))
+      (expression_statement
+        (call_expression
+          (identifier)
+          (arguments)))
+      (expression_statement
+        (call_expression
+          (member_expression
+            (call_expression
+              (identifier)
+              (arguments
+                (number)))
+            (property_identifier))
+          (arguments)))
+      (if_statement
+        (parenthesized_expression
+          (identifier))
+        (write_statement
+          (identifier)
+          (number))
+        (else_clause
+          (write_statement
+            (identifier)
+            (number))))
+      (write_statement
+        (identifier)
+        (number))
+      (write_statement
+        (subscript_expression
+          (identifier)
+          (string
+            (string_fragment)))
+        (number))
+      (return_statement
+        (call_expression
+          (identifier)
+          (arguments
+            (number)))))))
