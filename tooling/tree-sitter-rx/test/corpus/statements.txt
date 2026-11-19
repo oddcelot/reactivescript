@@ -342,3 +342,35 @@ action go() {
           (identifier)
           (arguments
             (number)))))))
+
+================================================================================
+Brackets in a comment on one line
+================================================================================
+
+action a() {
+  x := 1 f(/* ) { */ 2) g(2 / 1)
+}
+
+--------------------------------------------------------------------------------
+
+(program
+  (action_declaration
+    (identifier)
+    (formal_parameters)
+    (statement_block
+      (write_statement
+        (identifier)
+        (number))
+      (expression_statement
+        (call_expression
+          (identifier)
+          (arguments
+            (comment)
+            (number))))
+      (expression_statement
+        (call_expression
+          (identifier)
+          (arguments
+            (binary_expression
+              (number)
+              (number))))))))

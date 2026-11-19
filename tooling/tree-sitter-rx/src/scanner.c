@@ -130,14 +130,38 @@ static bool word_in(const char *word, const char *const *list) {
     return false;
 }
 
-// Skips a bracketed run on one line, from its opening bracket to past the closing one. Brackets in a string do not
-// count.
+// Skips a bracketed run on one line, from its opening bracket to past the closing one. Brackets in a string or a
+// comment do not count.
 static bool skip_brackets(TSLexer *lexer) {
     unsigned depth = 0;
     do {
         int32_t c = lexer->lookahead;
         if (c == '\n' || c == 0) {
             return false;
+        }
+        if (c == '/') {
+            skip(lexer);
+            if (lexer->lookahead == '/') {
+                return false; // the rest of the line is a comment: the bracket does not close on it
+            }
+            if (lexer->lookahead == '*') {
+                skip(lexer);
+                for (;;) {
+                    if (lexer->lookahead == '\n' || lexer->lookahead == 0) {
+                        return false;
+                    }
+                    if (lexer->lookahead == '*') {
+                        skip(lexer);
+                        if (lexer->lookahead == '/') {
+                            skip(lexer);
+                            break;
+                        }
+                        continue;
+                    }
+                    skip(lexer);
+                }
+            }
+            continue; // a division: the `/` is already skipped
         }
         if (c == '(' || c == '[' || c == '{') {
             depth++;

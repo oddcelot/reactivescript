@@ -158,7 +158,7 @@ module.exports = grammar(tsx, {
       field('body', $.statement_block),
     ),
 
-    effect_inputs: $ => seq('(', commaSep($.expression), optional(','), ')'),
+    effect_inputs: $ => seq('(', optional(seq(commaSep1($.expression), optional(','))), ')'),
 
     // `fn f(a: T): R => e` or `fn f(ref a) { decls; tail }`
     fn_declaration: $ => seq(
@@ -503,5 +503,13 @@ module.exports = grammar(tsx, {
  * @returns {ChoiceRule}
  */
 function commaSep(rule) {
-  return optional(seq(rule, repeat(seq(',', rule))));
+  return optional(commaSep1(rule));
+}
+
+/**
+ * @param {RuleOrLiteral} rule
+ * @returns {SeqRule}
+ */
+function commaSep1(rule) {
+  return seq(rule, repeat(seq(',', rule)));
 }
