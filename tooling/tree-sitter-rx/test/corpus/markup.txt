@@ -349,3 +349,83 @@ component A() {
         value: (identifier))
       (jsx_expression
         (identifier)))))
+
+========================================
+Text with > and a bare &
+========================================
+
+component App() {
+  <p>Fish & chips -> a > b &amp; c</p>
+}
+
+---
+
+(program
+  (component_declaration
+    (identifier)
+    (formal_parameters)
+    (view_block
+      (jsx_element
+        (jsx_opening_element
+          (identifier))
+        (jsx_text)
+        (html_character_reference)
+        (jsx_text)
+        (jsx_closing_element
+          (identifier))))))
+
+========================================
+A style inside an element
+========================================
+
+component App() {
+  <div>
+    <style>.a { color: red }</style>
+  </div>
+}
+
+---
+
+(program
+  (component_declaration
+    (identifier)
+    (formal_parameters)
+    (view_block
+      (jsx_element
+        (jsx_opening_element
+          (identifier))
+        (style_element
+          (identifier)
+          (raw_text)
+          (identifier))
+        (jsx_closing_element
+          (identifier))))))
+
+========================================
+An attribute value without braces
+========================================
+
+component App() {
+  <input value=1 name=field checked=true disabled />
+}
+
+---
+
+(program
+  (component_declaration
+    (identifier)
+    (formal_parameters)
+    (view_block
+      (jsx_self_closing_element
+        (identifier)
+        (jsx_attribute
+          (property_identifier)
+          (number))
+        (jsx_attribute
+          (property_identifier)
+          (identifier))
+        (jsx_attribute
+          (property_identifier)
+          (true))
+        (jsx_attribute
+          (property_identifier))))))

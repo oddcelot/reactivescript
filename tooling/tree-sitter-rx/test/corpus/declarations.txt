@@ -483,3 +483,50 @@ source a := 1; b = a + 1
     value: (binary_expression
       left: (identifier)
       right: (number))))
+
+========================================
+A fn body on the next line
+========================================
+
+fn f(a: number): number
+{
+  a + 1
+}
+
+server fn load(id: number): Row
+{
+  return db(id)
+}
+
+---
+
+(program
+  (fn_declaration
+    (identifier)
+    (formal_parameters
+      (required_parameter
+        (identifier)
+        (type_annotation
+          (predefined_type))))
+    (type_annotation
+      (predefined_type))
+    (fn_body
+      (binary_expression
+        (identifier)
+        (number))))
+  (server_function_declaration
+    (side)
+    (identifier)
+    (formal_parameters
+      (required_parameter
+        (identifier)
+        (type_annotation
+          (predefined_type))))
+    (type_annotation
+      (type_identifier))
+    (statement_block
+      (return_statement
+        (call_expression
+          (identifier)
+          (arguments
+            (identifier)))))))

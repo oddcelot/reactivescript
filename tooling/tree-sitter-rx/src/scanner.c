@@ -82,8 +82,12 @@ static bool scan_whitespace_and_comments(TSLexer *lexer, bool *scanned_comment) 
     }
 }
 
-// rx: parse.rs reads statements back to back, so on the same line a write target (`x`, `x.a`, `xs[i].b`) followed by
-// `:=` starts the next statement: `optimistic x := v` is the statement `optimistic`, then the write `x := v`.
+// rx: parse.rs reads statements back to back, so on the same line the start of a statement ends the one before it:
+// `optimistic x := v` is the statement `optimistic`, then the write `x := v`. What starts one here is
+//   - a statement keyword: `a := 1 guess b := 2`, `if (c) x := 1 else y := 2`
+//   - a write target (`x`, `x.a`, `xs[i].b`, `use theme`) followed by `:=`
+//   - after a whole expression, a call: `foo() bar()`
+// A word alone does not, since the token before it is not known here: `type T`, `let x` and `return x` go on.
 static bool is_word_start(int32_t c) { return iswalpha(c) || c == '_' || c == '$'; }
 static bool is_word_char(int32_t c) { return iswalnum(c) || c == '_' || c == '$'; }
 
@@ -93,38 +97,131 @@ static void skip_blanks(TSLexer *lexer) {
     }
 }
 
-static bool scan_write_ahead(TSLexer *lexer) {
+#define WORD_MAX 16
+
+// Reads a word into `word`; a longer one is cut short, which matches no keyword.
+static void scan_word(TSLexer *lexer, char *word) {
+    unsigned length = 0;
+    while (is_word_char(lexer->lookahead)) {
+        if (length < WORD_MAX - 1) {
+            word[length++] = lexer->lookahead < 0x80 ? (char)lexer->lookahead : '?';
+        } else {
+            word[0] = 0;
+            length = WORD_MAX;
+        }
+        skip(lexer);
+    }
+    if (length < WORD_MAX) {
+        word[length] = 0;
+    }
+}
+
+static bool word_in(const char *word, const char *const *list) {
+    for (; *list; list++) {
+        const char *a = word, *b = *list;
+        while (*a && *a == *b) {
+            a++;
+            b++;
+        }
+        if (*a == 0 && *b == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Skips a bracketed run on one line, from its opening bracket to past the closing one. Brackets in a string do not
+// count.
+static bool skip_brackets(TSLexer *lexer) {
+    unsigned depth = 0;
+    do {
+        int32_t c = lexer->lookahead;
+        if (c == '\n' || c == 0) {
+            return false;
+        }
+        if (c == '(' || c == '[' || c == '{') {
+            depth++;
+        } else if (c == ')' || c == ']' || c == '}') {
+            depth--;
+        } else if (c == '"' || c == '\'' || c == '`') {
+            skip(lexer);
+            while (lexer->lookahead != c) {
+                if (lexer->lookahead == '\\') {
+                    skip(lexer);
+                }
+                if (lexer->lookahead == '\n' || lexer->lookahead == 0) {
+                    return false;
+                }
+                skip(lexer);
+            }
+        }
+        skip(lexer);
+    } while (depth > 0);
+    return true;
+}
+
+static bool scan_statement_ahead(TSLexer *lexer, bool after_expression) {
+    static const char *const starts[] = {"else",   "if",    "for", "while",  "do",    "return",   "const", "let",
+                                         "var",    "try",   "switch", "break", "continue", NULL};
+    static const char *const starts_with_name[] = {"guess", "refresh", "affects", NULL};
+    // words that go on with the expression or declaration before them, whatever follows
+    static const char *const joins[] = {"catch", "in",      "instanceof", "as", "satisfies", "of", "is",
+                                        "extends", "rejects", "fn",         "function", NULL};
+    char word[WORD_MAX];
+
     if (!is_word_start(lexer->lookahead)) {
         return false;
     }
-    while (is_word_char(lexer->lookahead)) {
-        skip(lexer);
+    scan_word(lexer, word);
+    if (word_in(word, starts)) {
+        return true;
+    }
+    if (word_in(word, joins)) {
+        return false;
+    }
+    bool blanks = lexer->lookahead == ' ' || lexer->lookahead == '\t';
+    skip_blanks(lexer);
+    if (blanks && word_in(word, starts_with_name)) {
+        return is_word_start(lexer->lookahead);
+    }
+    if (blanks && word_in(word, (const char *const[]){"action", NULL})) {
+        return lexer->lookahead == '{';
+    }
+    if (blanks && word_in(word, (const char *const[]){"use", NULL}) && is_word_start(lexer->lookahead)) {
+        scan_word(lexer, word);
+        blanks = lexer->lookahead == ' ' || lexer->lookahead == '\t';
+        skip_blanks(lexer);
     }
     for (;;) {
-        skip_blanks(lexer);
         if (lexer->lookahead == '.') {
             skip(lexer);
             if (!is_word_start(lexer->lookahead)) {
                 return false;
             }
-            while (is_word_char(lexer->lookahead)) {
-                skip(lexer);
-            }
+            scan_word(lexer, word);
         } else if (lexer->lookahead == '[') {
-            unsigned depth = 0;
-            do {
-                if (lexer->lookahead == '[') {
-                    depth++;
-                } else if (lexer->lookahead == ']') {
-                    depth--;
-                } else if (lexer->lookahead == '\n' || lexer->lookahead == 0) {
-                    return false;
-                }
+            if (!skip_brackets(lexer)) {
+                return false;
+            }
+        } else if (lexer->lookahead == '(' && after_expression && !blanks) {
+            // a call, unless what follows its arguments makes it a signature or an arrow's parameters
+            if (!skip_brackets(lexer)) {
+                return false;
+            }
+            skip_blanks(lexer);
+            if (lexer->lookahead == '{' || lexer->lookahead == ':') {
+                return false;
+            }
+            if (lexer->lookahead == '=') {
                 skip(lexer);
-            } while (depth > 0);
+                return lexer->lookahead != '>';
+            }
+            return true;
         } else {
             break;
         }
+        blanks = lexer->lookahead == ' ' || lexer->lookahead == '\t';
+        skip_blanks(lexer);
     }
     if (lexer->lookahead != ':') {
         return false;
@@ -155,7 +252,8 @@ static bool scan_automatic_semicolon(TSLexer *lexer, const bool *valid_symbols, 
             return true;
         }
         if (!iswspace(lexer->lookahead)) {
-            return scan_write_ahead(lexer);
+            // rx: a ternary's `?` may follow only a whole expression
+            return scan_statement_ahead(lexer, valid_symbols[TERNARY_QMARK]);
         }
         if (lexer->lookahead == '\n') {
             break;
@@ -347,8 +445,29 @@ static bool scan_jsx_text(TSLexer *lexer) {
     // immediately follows a newline.
     bool at_newline = false;
 
-    while (lexer->lookahead != 0 && lexer->lookahead != '<' && lexer->lookahead != '>' && lexer->lookahead != '{' &&
-           lexer->lookahead != '}' && lexer->lookahead != '&') {
+    // rx: parse.rs ends an element's text at `<`, `{` and `}` only, so `>` and a bare `&` are text. A character
+    // reference (`&amp;`, `&#38;`) is left to the grammar's html_character_reference.
+    lexer->mark_end(lexer);
+    while (lexer->lookahead != 0 && lexer->lookahead != '<' && lexer->lookahead != '{' && lexer->lookahead != '}') {
+        if (lexer->lookahead == '&') {
+            advance(lexer);
+            bool is_reference = false;
+            if (lexer->lookahead == '#' || iswalpha(lexer->lookahead)) {
+                unsigned length = 0;
+                do {
+                    advance(lexer);
+                    length++;
+                } while (iswalnum(lexer->lookahead) && length < 32);
+                is_reference = lexer->lookahead == ';';
+            }
+            if (is_reference) {
+                break;
+            }
+            at_newline = false;
+            saw_text = true;
+            lexer->mark_end(lexer);
+            continue;
+        }
         bool is_wspace = iswspace(lexer->lookahead);
         if (lexer->lookahead == '\n') {
             at_newline = true;
@@ -374,6 +493,7 @@ static bool scan_jsx_text(TSLexer *lexer) {
         }
 
         advance(lexer);
+        lexer->mark_end(lexer);
     }
 
     lexer->result_symbol = JSX_TEXT;

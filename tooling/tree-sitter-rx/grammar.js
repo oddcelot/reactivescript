@@ -54,7 +54,8 @@ module.exports = grammar(tsx, {
       $._view_item,
     ),
 
-    // `import pure { a } from "./x"`, `import server { … }`, `… fails A | B`
+    // `import pure { a } from "./x"`, `import server { … }`, `… fails A | B`. `server`/`client` is a side before
+    // `pure` or `{` (parse.rs's IMPORT_SIDE); in `import server from "./x"` it is the default import's name
     import_statement: $ => seq(
       'import',
       optional(field('side', $.side)),
@@ -65,6 +66,11 @@ module.exports = grammar(tsx, {
       ),
       optional($.fails_clause),
       $._semicolon,
+    ),
+
+    _import_identifier: ($, previous) => choice(
+      previous,
+      alias(choice('server', 'client'), $.identifier),
     ),
 
     side: _ => choice('server', 'client'),
@@ -174,7 +180,8 @@ module.exports = grammar(tsx, {
       '}',
     ),
 
-    // A declaration file's row: `server pure fn f(a: T): R rejects(E) instantiates`
+    // A declaration file's row: `server pure fn f(a: T): R rejects(E) instantiates`. As TSX's function_signature,
+    // it does not end at a newline that a `{` follows: that is a fn's body (parse.rs skips newlines before it)
     fn_signature: $ => seq(
       optional(field('side', $.side)),
       optional($.pure),
@@ -184,7 +191,7 @@ module.exports = grammar(tsx, {
       optional(field('return_type', $.type_annotation)),
       optional($.rejects_clause),
       optional('instantiates'),
-      $._semicolon,
+      choice($._semicolon, $._function_signature_automatic_semicolon),
     ),
 
     rejects_clause: $ => seq('rejects', '(', $._error_classes, ')'),
@@ -325,6 +332,23 @@ module.exports = grammar(tsx, {
       '>',
     ),
 
+    // parse.rs reads a `<style>` as raw CSS at any depth (the compiler then reports where it may not be)
+    _jsx_child: ($, previous) => choice(previous, $.style_element),
+
+    // `value=1`, `value=name`: parse.rs reads a primary expression after `=`
+    _jsx_attribute_value: ($, previous) => choice(
+      previous,
+      $.identifier,
+      $.number,
+      $.template_string,
+      $.true,
+      $.false,
+      $.null,
+      $.undefined,
+      $.parenthesized_expression,
+      $.array,
+    ),
+
     // ---------------------------------------------------------------- imperative statements
 
     statement: ($, previous) => choice(
@@ -411,8 +435,8 @@ module.exports = grammar(tsx, {
     // TC39's throw expression: `c ? a : throw NotFound(id)`
     throw_expression: $ => prec.left('unary_void', seq('throw', field('argument', $.expression))),
 
-    // `e catch (x: A | B) => alt`, looser than every operator
-    catch_expression: $ => prec.right('catch', seq(
+    // `e catch (x: A | B) => alt`, looser than every operator; a chain folds left, `(a catch => b) catch => c`
+    catch_expression: $ => prec.left('catch', seq(
       field('value', $.expression),
       'catch',
       optional(seq(
@@ -458,6 +482,11 @@ module.exports = grammar(tsx, {
     ),
 
     ref_modifier: _ => 'ref',
+
+    // `): ref string`, `): [ref boolean, (v: boolean) => void]`: an accessor in a signature's return (MO-10b)
+    type: ($, previous) => choice(previous, $.ref_type),
+
+    ref_type: $ => prec.right(seq($.ref_modifier, $.type)),
 
     _reserved_identifier: ($, previous) => choice(
       previous,
