@@ -177,7 +177,7 @@ node --experimental-strip-types ref/check.ts examples/todo.rx   # check a progra
 node --experimental-strip-types ref/run.ts                      # run every scenario
 ```
 
-Running the scenarios on Solid itself needs Solid's `next` branch built from
+Running the scenarios on Solid itself needs Solid's `main` branch built from
 source (pnpm and a Rust toolchain); see [CONTRIBUTING.md](CONTRIBUTING.md) and
 [`ref/README.md`](ref/README.md). The compiler builds with Cargo
 ([`compiler/README.md`](compiler/README.md)). To try an unreleased editor build, install a `.vsix` from a run of the
