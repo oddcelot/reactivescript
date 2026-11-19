@@ -16,4 +16,4 @@ languages = ["ReactiveScript"]
 [grammars.rx]
 repository = "https://github.com/solidjs/reactivescript"
 path = "tooling/tree-sitter-rx"
-rev = "8e660221357e784832b98a621bfa7c961fb0a517"
+rev = "42dfbc50d5b2d9a2e89c0de67ae95984358fe5d4"
