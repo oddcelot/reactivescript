@@ -7,8 +7,9 @@
   (raw_text) @injection.content)
   (#set! injection.language "css"))
 
-; JSDoc in comments
+; JSDoc in /** */ comments only: a // line or a plain /* */ block is prose
 ((comment) @injection.content
+  (#match? @injection.content "^/\\*\\*[^*/]")
   (#set! injection.language "jsdoc"))
 
 ; Regex syntax in regex literals
