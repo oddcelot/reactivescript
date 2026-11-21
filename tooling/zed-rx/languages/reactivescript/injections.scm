@@ -16,38 +16,50 @@
 ((regex_pattern) @injection.content
   (#set! injection.language "regex"))
 
-; Tagged templates, where the tag names the language: css`…`, html`…`, sql`…`, graphql`…`. The template's text pieces
-; are parsed together as one document; the `${…}` holes between them stay rx.
-(call_expression
-  function: [
-    (identifier) @injection.language
-    (member_expression
-      property: (property_identifier) @injection.language)
-  ]
-  arguments: (template_string
-    (string_fragment) @injection.content)
-  (#any-of? @injection.language "css" "html" "sql" "graphql")
-  (#set! injection.combined))
-
-; gql`…` is GraphQL
+; Tagged templates, one pattern per tag with its language named, as Zed's TSX injections do: css`…`, html`…`,
+; sql`…`, graphql`…`/gql`…`. Each text piece of the template is injected on its own. (Taking the language from a
+; capture, with injection.combined, stops Zed's tag auto-close from working anywhere in the file.)
 (call_expression
   function: (identifier) @_tag
+  (#eq? @_tag "css")
   arguments: (template_string
-    (string_fragment) @injection.content)
-  (#eq? @_tag "gql")
-  (#set! injection.language "graphql")
-  (#set! injection.combined))
+    (string_fragment) @injection.content
+    (#set! injection.language "css")))
+
+(call_expression
+  function: (identifier) @_tag
+  (#eq? @_tag "html")
+  arguments: (template_string
+    (string_fragment) @injection.content
+    (#set! injection.language "html")))
+
+(call_expression
+  function: (identifier) @_tag
+  (#eq? @_tag "sql")
+  arguments: (template_string
+    (string_fragment) @injection.content
+    (#set! injection.language "sql")))
+
+(call_expression
+  function: (identifier) @_tag
+  (#any-of? @_tag "graphql" "gql")
+  arguments: (template_string
+    (string_fragment) @injection.content
+    (#set! injection.language "graphql")))
 
 ; styled.div`…`, styled(Button)`…`: CSS
 (call_expression
-  function: [
-    (member_expression
-      object: (identifier) @_styled)
-    (call_expression
-      function: (identifier) @_styled)
-  ]
+  function: (member_expression
+    object: (identifier) @_styled
+    (#eq? @_styled "styled"))
   arguments: (template_string
-    (string_fragment) @injection.content)
-  (#eq? @_styled "styled")
-  (#set! injection.language "css")
-  (#set! injection.combined))
+    (string_fragment) @injection.content
+    (#set! injection.language "css")))
+
+(call_expression
+  function: (call_expression
+    function: (identifier) @_styled
+    (#eq? @_styled "styled"))
+  arguments: (template_string
+    (string_fragment) @injection.content
+    (#set! injection.language "css")))
