@@ -3,6 +3,7 @@
 // for every platform), or, when $RXC names a binary, a short `rxc serve` run per request.
 const { spawnSync } = require("node:child_process");
 const { existsSync, mkdirSync, writeFileSync, readFileSync, statSync } = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 
 const repo = path.resolve(__dirname, "../../..");
@@ -75,12 +76,15 @@ function analyze(file, text, prelude) {
 }
 
 /** Where a file's projection imports the prelude from: written once beside the nearest `node_modules`, so its own
- *  `@solidjs/web` resolves; a `.d.ts`, so the import needs no extension. */
+ *  `@solidjs/web` resolves; a `.d.ts`, so the import needs no extension. A file with no `node_modules` above it gets
+ *  one in the temp directory: its Solid types are missing, but the rest of the server still answers. */
 const preludes = new Map();
 function preludeFor(file) {
   let dir = path.dirname(file);
   while (!existsSync(path.join(dir, "node_modules")) && path.dirname(dir) !== dir) dir = path.dirname(dir);
-  const at = path.join(dir, "node_modules", ".reactivescript", "prelude");
+  const at = existsSync(path.join(dir, "node_modules"))
+    ? path.join(dir, "node_modules", ".reactivescript", "prelude")
+    : path.join(os.tmpdir(), "reactivescript", "prelude");
   if (!preludes.has(at)) {
     const text = ask("prelude", {});
     mkdirSync(path.dirname(at), { recursive: true });
