@@ -62,10 +62,10 @@
   function: (member_expression
     property: (property_identifier) @function))
 
-; The prelude
+; The prelude. A theme without `function.builtin` styles it as `function`.
 (call_expression
-  function: (identifier) @function
-  (#any-of? @function "log" "onFlush" "onSettled"))
+  function: (identifier) @function.builtin
+  (#any-of? @function.builtin "log" "onFlush" "onSettled"))
 
 ; ============================================================ parameters
 
@@ -146,18 +146,6 @@
   "${" @punctuation.special
   "}" @punctuation.special) @embedded
 
-(type_arguments
-  [
-    "<"
-    ">"
-  ] @punctuation.bracket)
-
-(type_parameters
-  [
-    "<"
-    ">"
-  ] @punctuation.bracket)
-
 [
   "+"
   "-"
@@ -192,6 +180,19 @@
   "?"
   "->"
 ] @operator
+
+; After the operators: a generic's angle brackets are brackets, not comparisons
+(type_arguments
+  [
+    "<"
+    ">"
+  ] @punctuation.bracket)
+
+(type_parameters
+  [
+    "<"
+    ">"
+  ] @punctuation.bracket)
 
 ; ============================================================ keywords (JavaScript, TypeScript)
 
