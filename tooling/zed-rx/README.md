@@ -32,9 +32,6 @@ All under `lsp.rx-language-server` in Zed's `settings.json`:
 {
   "lsp": {
     "rx-language-server": {
-      "binary": {
-        "path": "/path/to/reactivescript/tooling/rx-language-server/bin/server.js"
-      },
       "settings": {
         "rxc": { "path": "/path/to/reactivescript/compiler/target/release/rxc" },
         "typescript": { "tsdk": "/path/to/project/node_modules/typescript/lib" }
@@ -44,9 +41,6 @@ All under `lsp.rx-language-server` in Zed's `settings.json`:
 }
 ```
 
-- `binary.path` (and `binary.arguments`): another server instead of the npm
-  package; a `.js` file runs with Zed's Node, anything else runs directly.
-  `--stdio` is added if missing.
 - `settings.rxc.path`: an `rxc` binary for the server to run per request
   instead of its bundled WebAssembly build (sets `RXC`).
 - `settings.typescript.tsdk`: TypeScript's `lib` folder. Unset: the worktree's
@@ -54,6 +48,29 @@ All under `lsp.rx-language-server` in Zed's `settings.json`:
   parent workspace's), else the server's own.
 - `initialization_options`: merged over what the extension sends
   (`{ "typescript": { "tsdk": … } }`).
+
+To run another server instead of the npm package, such as this repository's,
+set `binary`. Zed then starts that command itself, without the extension: it
+adds no `--stdio`, does not run a `.js` file with its Node, and does not read
+`settings.rxc.path`, so name all three:
+
+```json
+{
+  "lsp": {
+    "rx-language-server": {
+      "binary": {
+        "path": "node",
+        "arguments": ["/path/to/reactivescript/tooling/rx-language-server/bin/server.js", "--stdio"],
+        "env": { "RXC": "/path/to/reactivescript/compiler/target/release/rxc" }
+      }
+    }
+  }
+}
+```
+
+`binary.env` without a `path` is added to the npm server's environment.
+`binary.arguments` without a `path` replaces the extension's arguments (the
+server's path and `--stdio`), so set it only together with a `path`.
 
 The server's semantic tokens only show once Zed asks for them; they are off by
 default:
