@@ -90,6 +90,9 @@ pub fn analyze(params: &Value, disk: &dyn Fn(&str) -> Option<String>) -> Value {
         crate::check::check_modules(&set, params["spa"].as_bool().unwrap_or(false)).diags.iter().map(|d| diagnostic_json(&set, d)).filter(|d| d["file"] == json!(file)).collect()
     };
     out["diagnostics"] = json!(own);
+    let si = utf16_index(&src);
+    let keywords: Vec<[u32; 2]> = crate::parse::keyword_spans(&src).into_iter().map(|(a, n)| [si[a], si[a + n] - si[a]]).collect();
+    out["keywords"] = json!(keywords);
     out
 }
 

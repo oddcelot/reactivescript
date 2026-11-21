@@ -76,10 +76,12 @@ pub struct Cursor<'a> {
     pub pending: Vec<Stmt>,
     /// `$$n`: the bound value of a destructuring whose right side is not a name (RG-4b)
     pub temps: usize,
+    /// where a keyword was read, `(start, len)` in bytes: an editor's hover on one explains it (`keyword_spans`)
+    pub keywords: Vec<(usize, usize)>,
 }
 impl<'a> Cursor<'a> {
     pub fn new(src: &'a str) -> Self {
-        Cursor { src, i: 0, recover: false, errors: vec![], pending: vec![], temps: 0 }
+        Cursor { src, i: 0, recover: false, errors: vec![], pending: vec![], temps: 0, keywords: vec![] }
     }
     /// What `fail` would return, recorded instead (`recover`).
     fn note(&mut self, msg: &str) {
@@ -180,6 +182,7 @@ impl<'a> Cursor<'a> {
     pub fn keyword(&mut self, k: &str) -> bool {
         let save = self.i;
         if self.ident().as_deref() == Some(k) && !is_ident_char(self.peek()) {
+            self.keywords.push((save, k.len()));
             return true;
         }
         self.i = save;
@@ -339,36 +342,52 @@ pub fn parse_program(src: &str) -> R<Program> {
 /// still projects. Never used to compile: `parse_program` is the language.
 pub fn parse_program_recovering(src: &str) -> (Program, Vec<ParseError>) {
     let mut c = Cursor::new(src);
+    let p = recover(&mut c);
+    (p, c.errors)
+}
+
+/// Where an editor's parse (`parse_program_recovering`) read a keyword, `(start, len)` in bytes, in order and once each.
+/// A keyword read by an attempt the parse then dropped is still one: the parser reserves them (`is_kw`), and the
+/// language server leaves out any that the projection maps as a name.
+pub fn keyword_spans(src: &str) -> Vec<(usize, usize)> {
+    let mut c = Cursor::new(src);
+    recover(&mut c);
+    let mut k = std::mem::take(&mut c.keywords);
+    k.sort_unstable();
+    k.dedup();
+    k
+}
+
+fn recover(c: &mut Cursor) -> Program {
     c.recover = true;
     let mut decls = vec![];
     c.ws(true);
     while !c.eof() {
-        if !looks_like_decl(&mut c) {
+        if !looks_like_decl(c) {
             let (at, n) = (c.i, c.errors.len());
-            match parse_markup(&mut c, Close::Top) {
+            match parse_markup(c, Close::Top) {
                 Ok(view) if !view.is_empty() => {
-                    let mut errors = c.errors;
-                    errors.push(ParseError("line 1: markup at a module's top level (MO-1c)".into(), Some(at), None, "PARSE"));
-                    return (Program { decls, view, legacy_view: Some(true) }, errors);
+                    c.errors.push(ParseError("line 1: markup at a module's top level (MO-1c)".into(), Some(at), None, "PARSE"));
+                    return Program { decls, view, legacy_view: Some(true) };
                 }
                 Ok(_) => break,
                 Err(e) => {
                     c.errors.truncate(n);
                     c.errors.push(e);
                     c.i = at;
-                    skip_line(&mut c);
+                    skip_line(c);
                 }
             }
         } else {
             let (at, n) = (c.i, c.errors.len());
-            match parse_decls1(&mut c) {
+            match parse_decls1(c) {
                 Ok(d) => decls.extend(d),
                 Err(e) => {
                     // what the failed attempt noted on the way is moot: the declaration is out
                     c.errors.truncate(n);
                     c.errors.push(e);
                     c.i = at;
-                    skip_line(&mut c);
+                    skip_line(c);
                 }
             }
         }
@@ -380,7 +399,7 @@ pub fn parse_program_recovering(src: &str) -> (Program, Vec<ParseError>) {
         Some(Decl::Component { name, line, .. }) => (vec![Markup { kind: MarkupKind::El { tag: name.clone(), attrs: vec![], children: vec![] }, line: Some(*line), span: Span::NONE }], None),
         _ => (vec![], Some(false)),
     };
-    (Program { decls, view, legacy_view }, c.errors)
+    Program { decls, view, legacy_view }
 }
 /// On to the next line that starts at column 0 with something other than a closing brace (where a declaration may).
 fn skip_line(c: &mut Cursor) {
@@ -1637,6 +1656,7 @@ fn parse_unary(c: &mut Cursor) -> R<Expr> {
         return Ok(ex(start, ExprKind::Use(c.ident_or("context name")?), c));
     }
     if c.starts_with("pending?") {
+        c.keywords.push((c.i, 8));
         c.i += 8;
         c.ws(true);
         return Ok(ex(start, ExprKind::Pending(Box::new(parse_unary(c)?)), c));
