@@ -107,6 +107,8 @@ const hoverText = h => !h ? "" : typeof h.contents === "string" ? h.contents : A
   check("in markup, after `props.product.`: Product's fields", l3.includes("name") && l3.includes("price"), l3.slice(0, 20));
   const h6 = await server.sendHoverRequest(ui.uri, at(uit, "onClick", 2));
   check("an attribute hovers as Solid's JSX type", /onClick/.test(hoverText(h6)), h6);
+  const h7 = await server.sendHoverRequest(ui.uri, at(uit, "<li", 1));
+  check("an HTML tag hovers as its element, description and MDN page", /`<li>`/.test(hoverText(h7)) && /HTMLLIElement/.test(hoverText(h7)) && /list item/.test(hoverText(h7)) && /MDN Reference/.test(hoverText(h7)), h7);
 
   await server.shutdown();
 
@@ -122,7 +124,7 @@ const hoverText = h => !h ? "" : typeof h.contents === "string" ? h.contents : A
   const b1 = await server2.sendHoverRequest(view.uri, at(vt, "source n", 8));
   check("a name still hovers with its type (`n: number`)", /n: number/.test(hoverText(b1)), b1);
   const b2 = await server2.sendHoverRequest(view.uri, at(vt, "<p>", 1));
-  check("an HTML tag without Solid's types shows its name and MDN page, not `any`", /`<p>`/.test(hoverText(b2)) && /Element\/p\)/.test(hoverText(b2)) && !/\bany\b/.test(hoverText(b2)), b2);
+  check("an HTML tag without Solid's types shows its description and MDN page, not `any`", /`<p>`/.test(hoverText(b2)) && /paragraph/.test(hoverText(b2)) && /MDN Reference\]\(https:\/\/developer\.mozilla\.org\/.*\/p\)/.test(hoverText(b2)) && !/\bany\b/.test(hoverText(b2)), b2);
   await server2.shutdown();
   fs.rmSync(bare, { recursive: true, force: true });
 

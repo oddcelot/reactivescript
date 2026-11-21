@@ -111,9 +111,20 @@ function rxDiagnostics() {
   };
 }
 
+/** An HTML tag's one-line description and MDN page, as an `.html` file's hover has them (VS Code's HTML data). */
+let htmlTags;
+function htmlTag(name) {
+  htmlTags ??= new Map(require("@vscode/web-custom-data/data/browsers.html-data.json").tags.map(t => [t.name, t]));
+  const t = htmlTags.get(name);
+  if (!t) return null;
+  const description = typeof t.description === "string" ? t.description : t.description?.value;
+  return { description, mdn: t.references?.find(r => r.name === "MDN Reference")?.url };
+}
+
 /** TypeScript's hover, shortened where it says more than a reader wants. An HTML tag is a property of Solid's JSX
- *  types, `(property) JSX.HTMLElementTags.p: JSX.HTMLAttributes<HTMLParagraphElement> & …`: it is shown as the tag and
- *  its element's interface. A `@url` tag is a link under its page's name, the documentation's `MDN Reference`. */
+ *  types, `(property) JSX.HTMLElementTags.p: JSX.HTMLAttributes<HTMLParagraphElement> & …`: it is shown as the tag,
+ *  its element's interface and the tag's description. A `@url` tag is a link under its page's name, the
+ *  documentation's `MDN Reference`. */
 function shortHover(markdown) {
   const urls = [];
   let text = markdown.replace(/^\*@url\* — (\S+)[ \t]*$\n?/gm, (_, url) => (urls.push(url), "")).replace(/\n{3,}/g, "\n\n").trimEnd();
@@ -123,7 +134,8 @@ function shortHover(markdown) {
     const [whole, quoted, plain, element] = tag;
     named = urls.findIndex(url => url.endsWith(`/${element}`));
     const link = named < 0 ? `\`${element}\`` : `[\`${element}\`](${urls[named]})`;
-    text = `\`<${quoted ?? plain}>\` · ${link}${text.slice(whole.length)}`;
+    const description = htmlTag(quoted ?? plain)?.description;
+    text = `\`<${quoted ?? plain}>\` · ${link}${description ? `\n\n${description}` : ""}${text.slice(whole.length)}`;
   }
   const links = urls.filter((_, i) => i !== named).map((url, i) => {
     const mdn = /^https:\/\/developer\.mozilla\.org\//.test(url);
@@ -134,15 +146,16 @@ function shortHover(markdown) {
 }
 
 /** A hover that is TypeScript's bare `any`: what an HTML tag shows without Solid's types (no `node_modules` above the
- *  file). It names nothing: a tag shows its name and MDN page instead, anything else is dropped. A name typed `any`
- *  still hovers, as `const x: any`. */
+ *  file). It names nothing: a known tag shows its description and MDN page instead, anything else is dropped. A name
+ *  typed `any` still hovers, as `const x: any`. */
 const bareAny = /^```typescript\nany\n```$/;
 function untypedHover(hover, document) {
   if (!hover.range || !document?.getText) return null;
   const name = document.getText(hover.range);
   const before = document.getText().slice(0, document.offsetAt(hover.range.start));
-  if (!/^[a-z][a-z0-9]*$/.test(name) || !/<\/?$/.test(before)) return null;
-  hover.contents.value = `\`<${name}>\`\n\n[MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/${name})`;
+  const tag = /<\/?$/.test(before) && htmlTag(name);
+  if (!tag) return null;
+  hover.contents.value = [`\`<${name}>\``, tag.description, tag.mdn && `[MDN Reference](${tag.mdn})`].filter(Boolean).join("\n\n");
   return hover;
 }
 
