@@ -91,7 +91,7 @@ pub fn analyze(params: &Value, disk: &dyn Fn(&str) -> Option<String>) -> Value {
     };
     out["diagnostics"] = json!(own);
     let si = utf16_index(&src);
-    let keywords: Vec<[u32; 2]> = crate::parse::keyword_spans(&src).into_iter().map(|(a, n)| [si[a], si[a + n] - si[a]]).collect();
+    let keywords: Vec<[u32; 2]> = if file.ends_with(".d.rx") { crate::parse::declaration_keyword_spans(&src) } else { crate::parse::keyword_spans(&src) }.into_iter().map(|(a, n)| [si[a], si[a + n] - si[a]]).collect();
     out["keywords"] = json!(keywords);
     out
 }

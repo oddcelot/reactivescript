@@ -512,7 +512,20 @@ impl JsDecl {
     }
 }
 pub fn parse_declarations(src: &str) -> R<Vec<JsDecl>> {
+    declarations(&mut Cursor::new(src))
+}
+
+/// Where a declaration file's parse read each keyword, up to its first error (`keyword_spans` for a `.d.rx`).
+pub fn declaration_keyword_spans(src: &str) -> Vec<(usize, usize)> {
     let mut c = Cursor::new(src);
+    let _ = declarations(&mut c);
+    let mut k = std::mem::take(&mut c.keywords);
+    k.sort_unstable();
+    k.dedup();
+    k
+}
+
+fn declarations(mut c: &mut Cursor) -> R<Vec<JsDecl>> {
     let mut out = vec![];
     loop {
         c.ws(true);
