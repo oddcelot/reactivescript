@@ -133,7 +133,20 @@ function shortHover(markdown) {
   return links.length ? `${text}\n\n${links.join(" · ")}` : text;
 }
 
-/** The services, with their hovers shortened (`shortHover`). */
+/** A hover that is TypeScript's bare `any`: what an HTML tag shows without Solid's types (no `node_modules` above the
+ *  file). It names nothing: a tag shows its name and MDN page instead, anything else is dropped. A name typed `any`
+ *  still hovers, as `const x: any`. */
+const bareAny = /^```typescript\nany\n```$/;
+function untypedHover(hover, document) {
+  if (!hover.range || !document?.getText) return null;
+  const name = document.getText(hover.range);
+  const before = document.getText().slice(0, document.offsetAt(hover.range.start));
+  if (!/^[a-z][a-z0-9]*$/.test(name) || !/<\/?$/.test(before)) return null;
+  hover.contents.value = `\`<${name}>\`\n\n[MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/${name})`;
+  return hover;
+}
+
+/** The services, with their hovers shortened (`shortHover`) and bare `any` hovers dropped. */
 function withShortHovers(services) {
   return services.map(service => ({
     ...service,
@@ -143,10 +156,11 @@ function withShortHovers(services) {
       const provideHover = instance.provideHover.bind(instance);
       return {
         ...instance,
-        async provideHover(...args) {
-          const hover = await provideHover(...args);
-          if (hover?.contents?.kind === "markdown") hover.contents.value = shortHover(hover.contents.value);
-          return hover;
+        async provideHover(document, ...rest) {
+          const hover = await provideHover(document, ...rest);
+          if (hover?.contents?.kind !== "markdown") return hover;
+          hover.contents.value = shortHover(hover.contents.value);
+          return bareAny.test(hover.contents.value.trim()) ? untypedHover(hover, document) : hover;
         },
       };
     },

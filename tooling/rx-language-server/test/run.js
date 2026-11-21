@@ -109,6 +109,23 @@ const hoverText = h => !h ? "" : typeof h.contents === "string" ? h.contents : A
   check("an attribute hovers as Solid's JSX type", /onClick/.test(hoverText(h6)), h6);
 
   await server.shutdown();
+
+  // A file with no node_modules above it (here, the temp directory): no Solid types, but the server still answers.
+  console.log("without node_modules");
+  const bare = fs.mkdtempSync(path.join(require("node:os").tmpdir(), "rx-bare-"));
+  const bareFile = path.join(bare, "view.rx");
+  fs.writeFileSync(bareFile, "source n := 1\nexport default component App() {\n  <p>{n}</p>\n}\n");
+  const server2 = startLanguageServer(process.env.SERVER ? path.resolve(process.env.SERVER) : path.join(__dirname, "../bin/server.js"), bare);
+  await server2.initialize(URI.file(bare).toString(), { typescript: { tsdk: path.dirname(require.resolve("typescript")) } });
+  const view = await server2.openTextDocument(bareFile, "reactivescript");
+  const vt = view.getText();
+  const b1 = await server2.sendHoverRequest(view.uri, at(vt, "source n", 8));
+  check("a name still hovers with its type (`n: number`)", /n: number/.test(hoverText(b1)), b1);
+  const b2 = await server2.sendHoverRequest(view.uri, at(vt, "<p>", 1));
+  check("an HTML tag without Solid's types shows its name and MDN page, not `any`", /`<p>`/.test(hoverText(b2)) && /Element\/p\)/.test(hoverText(b2)) && !/\bany\b/.test(hoverText(b2)), b2);
+  await server2.shutdown();
+  fs.rmSync(bare, { recursive: true, force: true });
+
   console.log(`\n${pass} pass, ${fail} fail`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });
