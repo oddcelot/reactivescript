@@ -51,6 +51,22 @@ const hoverText = h => !h ? "" : typeof h.contents === "string" ? h.contents : A
   const h3 = await server.sendHoverRequest(cart.uri, at(text, "qtyOf(p.id)", 1));
   check("a function: `qtyOf(id: number): number`", /qtyOf\(id: number\): number/.test(hoverText(h3)), h3);
 
+  console.log("keyword hovers");
+  const k1 = await server.sendHoverRequest(cart.uri, at(text, "export source cart", 8));
+  check("`source` explains itself (W-1)", /W-1/.test(hoverText(k1)) && /written/.test(hoverText(k1)), k1);
+  const k2 = await server.sendHoverRequest(cart.uri, at(text, "affects cart", 2));
+  check("`affects` explains itself (AC-5)", /AC-5/.test(hoverText(k2)), k2);
+  const k3 = await server.sendHoverRequest(cart.uri, at(text, "affects cart", 9));
+  check("the name after a keyword is still TypeScript's: `cart` is Line[]", /Line\[\]/.test(hoverText(k3)) && !/AC-5/.test(hoverText(k3)), k3);
+  const mainDoc = await server.openTextDocument(path.join(ws, "main.rx"), "reactivescript");
+  const mainText = mainDoc.getText();
+  const k4 = await server.sendHoverRequest(mainDoc.uri, at(mainText, "(latest discount)", 2));
+  check("`latest` explains itself (R-9)", /latest x/.test(hoverText(k4)) && /R-9/.test(hoverText(k4)), k4);
+  const k5 = await server.sendHoverRequest(mainDoc.uri, at(mainText, "pending? cart", 3));
+  check("`pending?` explains itself (R-9)", /pending\? x/.test(hoverText(k5)), k5);
+  const k6 = await server.sendHoverRequest(mainDoc.uri, at(mainText, "`latest`: the total", 2));
+  check("a keyword in a comment has no hover", !/R-9/.test(hoverText(k6)), k6);
+
   console.log("go to definition");
   const d1 = await server.sendDefinitionRequest(cart.uri, at(text, "products.reduce", 2));
   const t1 = d1?.[0]?.targetUri ?? d1?.[0]?.uri;

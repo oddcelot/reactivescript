@@ -2,6 +2,7 @@
 // made by the crate with mappings onto the `.rx`: TypeScript's hover, definition, references, rename, completion and
 // type errors come back through them. The crate's own diagnostics (rule IDs, spec/99) are a service of their own.
 const { analyze, preludeFor } = require("./rxc");
+const { keywordHover } = require("./keywords");
 
 /** The page that explains a diagnostic code and its fix (the compiler's guide/diagnostics.md, one section a code). */
 const guideUrl = code => `https://github.com/solidjs/reactivescript/blob/main/guide/diagnostics.md#${String(code).toLowerCase()}`;
@@ -180,7 +181,37 @@ function withShortHovers(services) {
   }));
 }
 
+/** Hovers on `.rx`'s own keywords (`latest`, `pending?`, `guess`, …), which the projection drops: the crate reports where
+ *  its parse read each keyword, and one the projection maps as a name is left out. */
+function rxKeywordHovers() {
+  return {
+    name: "reactivescript-keywords",
+    capabilities: { hoverProvider: true },
+    create(context) {
+      return {
+        provideHover(document, position) {
+          if (document.languageId !== "reactivescript") return;
+          const { URI } = require("vscode-uri");
+          const uri = URI.parse(document.uri);
+          const source = context.decodeEmbeddedDocumentUri(uri)?.[0] ?? uri;
+          if (source.scheme !== "file") return;
+          const text = document.getText();
+          const a = analysis(source.fsPath, text);
+          const at = document.offsetAt(position);
+          const span = (a.keywords ?? []).find(([s, n]) => s <= at && at < s + n);
+          if (!span) return;
+          const [s, n] = span;
+          if ((a.mappings ?? []).some(([, ms, mn]) => s < ms + mn && ms < s + n)) return;
+          const value = keywordHover(text.slice(s, s + n));
+          if (!value) return;
+          return { contents: { kind: "markdown", value }, range: { start: document.positionAt(s), end: document.positionAt(s + n) } };
+        },
+      };
+    },
+  };
+}
+
 /** Every `.rx` module analyzed so far, with its last analysis (the command line reports their crate diagnostics). */
 const analyses = () => [...cache].filter(([f]) => isModule(f)).map(([file, { result }]) => ({ file, result }));
 
-module.exports = { rxLanguagePlugin, rxDiagnostics, shortHover, withShortHovers, analysis, analyses, guideUrl };
+module.exports = { rxLanguagePlugin, rxDiagnostics, rxKeywordHovers, shortHover, withShortHovers, analysis, analyses, guideUrl };

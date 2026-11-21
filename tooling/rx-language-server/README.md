@@ -5,7 +5,9 @@ A `.rx` file's virtual code is its TSX projection (spec/13 TY-1c), which the
 crate makes with mappings back onto the `.rx` (CP-8c). TypeScript answers hover,
 go to definition, references, rename, completion and type errors on the
 projection, and Volar maps the answers back. The crate's own diagnostics (parse
-errors, else the checker's, each with its rule) are a second service.
+errors, else the checker's, each with its rule) are a second service, and a
+hover on each `.rx` keyword (`latest`, `pending?`, `guess`, …), which the
+projection drops, is a third (`src/keywords.js`).
 
 A hover is TypeScript's, shortened in two places (`shortHover`): an HTML tag
 shows as the tag and its element's interface instead of its property in Solid's
