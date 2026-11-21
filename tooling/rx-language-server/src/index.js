@@ -50,8 +50,10 @@ function virtualCode(file, snapshot) {
   };
 }
 
+/** A `.d.rx`: no script for TypeScript, and the whole text mapped for hover (`semantic`) so its keywords hover. */
 function declarationCode(snapshot) {
-  return { id: "root", languageId: "reactivescript-declaration", snapshot, mappings: [], embeddedCodes: [{ id: "ts", languageId: "typescript", snapshot: snapshotOf("export {};\n"), mappings: [] }] };
+  const mappings = [{ sourceOffsets: [0], generatedOffsets: [0], lengths: [snapshot.getLength()], data: { semantic: true } }];
+  return { id: "root", languageId: "reactivescript-declaration", snapshot, mappings, embeddedCodes: [{ id: "ts", languageId: "typescript", snapshot: snapshotOf("export {};\n"), mappings: [] }] };
 }
 
 /** @param {typeof import("typescript")} ts */
@@ -190,7 +192,7 @@ function rxKeywordHovers() {
     create(context) {
       return {
         provideHover(document, position) {
-          if (document.languageId !== "reactivescript") return;
+          if (document.languageId !== "reactivescript" && document.languageId !== "reactivescript-declaration") return;
           const { URI } = require("vscode-uri");
           const uri = URI.parse(document.uri);
           const source = context.decodeEmbeddedDocumentUri(uri)?.[0] ?? uri;

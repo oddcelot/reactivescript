@@ -72,6 +72,24 @@ const KEYWORDS = {
     text: "A pure function. One that writes or awaits is an `action`; one that renders is a `component`.",
     link: LANG("declarations"),
   },
+  server: {
+    form: "server fn f(a) { … }",
+    text: "Runs on the server; the client calls it and awaits the answer. It is io only when its body is. In a `.d.rx`, `export server fn` is server-only JS, not in the client bundle and callable only in a server fn's body.",
+    rules: ["SF-1", "SF-5a"],
+    link: LANG("declarations"),
+  },
+  client: {
+    form: "export client pure fn r(…)",
+    text: "Browser-only JS. In an equation it may only be awaited, and is asked once the browser has the page: its readers need a `loading` region or a first paint (`-> v`).",
+    rules: ["SF-5b", "SV-7b"],
+    link: LANG("modules"),
+  },
+  rejects: {
+    form: "fn f(a) rejects(NotFound | Offline)",
+    text: "The failure classes `f`'s promise can reject with. In a JS module's `.d.rx` an absent `rejects` means `Error`.",
+    rules: ["MO-8", "R-f-8"],
+    link: REF("failures"),
+  },
   component: {
     form: "component C(props) { … }",
     text: "Declarations, then markup. Its parameters are read-only, and `props.x` stays live.",

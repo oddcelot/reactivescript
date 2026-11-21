@@ -66,6 +66,18 @@ const hoverText = h => !h ? "" : typeof h.contents === "string" ? h.contents : A
   check("`pending?` explains itself (R-9)", /pending\? x/.test(hoverText(k5)), k5);
   const k6 = await server.sendHoverRequest(mainDoc.uri, at(mainText, "`latest`: the total", 2));
   check("a keyword in a comment has no hover", !/R-9/.test(hoverText(k6)), k6);
+  // A declaration file's keywords come from its own parse: `server pure fn` is not a module's `server fn`.
+  const declFile = path.join(ws, "store.d.rx");
+  fs.writeFileSync(declFile, "export error Conflict\nexport server pure fn load(q: string): Promise<number[]>\nexport server fn save(id: number): Promise<number> rejects(Conflict)\nexport client pure fn viewport(): Promise<number>\n");
+  const declDoc = await server.openTextDocument(declFile, "reactivescript");
+  const declText = declDoc.getText();
+  for (const [needle, delta, re, name] of [
+    ["server pure fn load", 1, /SF-5a/, "`server`"], ["pure fn load", 1, /R-io-4/, "`pure`"], ["fn load", 0, /A pure function/, "`fn`"],
+    ["rejects(Conflict)", 2, /MO-8/, "`rejects`"], ["client pure", 2, /SF-5b/, "`client`"],
+  ]) {
+    const h = await server.sendHoverRequest(declDoc.uri, at(declText, needle, delta));
+    check(`${name} in a .d.rx explains itself`, re.test(hoverText(h)), h);
+  }
 
   console.log("go to definition");
   const d1 = await server.sendDefinitionRequest(cart.uri, at(text, "products.reduce", 2));
