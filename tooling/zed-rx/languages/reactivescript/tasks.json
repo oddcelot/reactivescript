@@ -1,0 +1,15 @@
+[
+  {
+    "label": "rx-tsc: type-check project",
+    "command": "npx",
+    "args": ["--no", "rx-tsc", "--noEmit"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "rx-tsc: type-check project (watch)",
+    "command": "npx",
+    "args": ["--no", "rx-tsc", "--noEmit", "--watch"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true
+  }
+]
