@@ -89,6 +89,40 @@ const hoverText = h => !h ? "" : typeof h.contents === "string" ? h.contents : A
   const m7 = modifiersAt(at(text, "let items = cart", 4));
   check("a handler's local is neither", m7 && !m7.includes("source") && !m7.includes("equation"), m7);
 
+  // A parameter and a local named like a source are neither: the name is looked up, not matched.
+  const shadowText = [
+    "source n: number := 0",
+    "source total: number := 0",
+    "fn twice(n: number): number => n * 2",
+    "double = n + 1",
+    "action bump() {",
+    "  let n = 1",
+    "  total := n",
+    "}",
+    "",
+  ].join("\n");
+  fs.writeFileSync(path.join(ws, "shadow.rx"), shadowText);
+  const shadow = await server.openTextDocument(path.join(ws, "shadow.rx"), "reactivescript");
+  const sst = (await server.sendSemanticTokensRequest(shadow.uri))?.data ?? [];
+  const shadowAt = pos => {
+    for (let i = 0, l = 0, c = 0; i < sst.length; i += 5) {
+      l += sst[i]; c = sst[i] ? sst[i + 1] : c + sst[i + 1];
+      if (l === pos.line && c === pos.character) return legend.tokenModifiers.filter((_, bit) => sst[i + 4] & (1 << bit));
+    }
+    return null;
+  };
+  const neither = m => m && !m.includes("source") && !m.includes("equation");
+  const s1 = shadowAt(at(shadowText, "double = n", 9));
+  check("a read of the source `n` is `source`", s1?.includes("source"), s1);
+  const s2 = shadowAt(at(shadowText, "twice(n", 6));
+  check("a parameter named like a source is neither", neither(s2), s2);
+  const s3 = shadowAt(at(shadowText, "=> n * 2", 3));
+  check("a read of that parameter is neither", neither(s3), s3);
+  const s4 = shadowAt(at(shadowText, "let n", 4));
+  check("a local named like a source is neither", neither(s4), s4);
+  const s5 = shadowAt(at(shadowText, ":= n", 3));
+  check("a read of that local is neither", neither(s5), s5);
+
   console.log("completion while typing");
   const lines = text.split("\n"); const end = { line: lines.length - 1, character: lines[lines.length - 1].length };
   const typed = await server.updateTextDocument(cart.uri, [{ range: { start: end, end }, newText: "\nnewest = cart." }]);

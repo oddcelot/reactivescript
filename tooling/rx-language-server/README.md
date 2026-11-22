@@ -18,8 +18,11 @@ errors, else the checker's, each with its rule) are a second service.
   hides: a source and an equation are both a `const` there, so both come back
   as `variable` with `readonly`. A source's name gets the modifier `source` and
   an equation's `equation`, wherever it is read or written, also in a module
-  that imports it. An editor maps the two to colours of its own (Zed:
-  `semantic_token_rules`; VS Code: `semanticTokenScopes`).
+  that imports it from a `.rx` file. A module read through its signature (a
+  `.d.rx`, or an MO-9 stub such as `export declare const n: any`) has no
+  initialiser, so its names get neither. Zed maps the two to colours with
+  `semantic_token_rules`; VS Code doesn't use them yet, since
+  `tooling/vscode-rx` contributes no `semanticTokenScopes`.
 - `bin/server.js` is the server, over stdio or IPC.
 
 The project needs a `tsconfig.json` with Solid's JSX (`"jsx": "preserve"`,

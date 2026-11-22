@@ -4,20 +4,20 @@
 // derived values alike. Each such token gets a modifier of its own here, `source` or `equation`, wherever the name is
 // read or written, in the module that declares it and in one that imports it.
 
+const { URI } = require("vscode-uri");
+
 /** The modifiers this adds to the legend. */
 const MODIFIERS = ["source", "equation"];
 
 /** The projection's helper a declaration is initialised with (`project.rs`), and the modifier its name gets. */
 const HELPERS = { typed: "source", src: "source", eq: "equation" };
 
-/** The modifier for the name at `node`: its declaration, followed through an import, is a `const` (or a name a
- *  destructuring `const` binds) initialised with one of the helpers. */
+/** The modifier for the name at `node`: its declaration, followed through an import, is a `const` initialised with one of the helpers. */
 function roleOf(ts, checker, node) {
   let symbol = ts.isShorthandPropertyAssignment(node.parent) ? checker.getShorthandAssignmentValueSymbol(node.parent) : checker.getSymbolAtLocation(node);
   if (!symbol) return undefined;
   if (symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
   let declaration = symbol.valueDeclaration;
-  while (declaration && ts.isBindingElement(declaration)) declaration = declaration.parent.parent;
   if (!declaration || !ts.isVariableDeclaration(declaration)) return undefined;
   const call = declaration.initializer;
   if (!call || !ts.isCallExpression(call)) return undefined;
@@ -30,7 +30,8 @@ function roleOf(ts, checker, node) {
  *  them for `document`, the projection). */
 function mark(ts, languageService, fileName, document, legend, tokens) {
   const variable = legend.tokenTypes.indexOf("variable");
-  const bits = Object.fromEntries(MODIFIERS.map(m => [m, 1 << legend.tokenModifiers.indexOf(m)]));
+  const bits = {};
+  for (const m of MODIFIERS) { const i = legend.tokenModifiers.indexOf(m); if (i >= 0) bits[m] = 1 << i; }
   const program = languageService.getProgram();
   const file = program?.getSourceFile(fileName);
   if (!file || variable < 0) return;
@@ -43,7 +44,7 @@ function mark(ts, languageService, fileName, document, legend, tokens) {
     const node = names.get(document.offsetAt({ line: token[0], character: token[1] }));
     if (!node) continue;
     const role = roleOf(ts, checker, node);
-    if (role) token[4] |= bits[role];
+    if (role && bits[role]) token[4] |= bits[role];
   }
 }
 
@@ -67,7 +68,6 @@ function withRxTokens(ts, services) {
             const tokens = await provide(document, range, legend, ...more);
             if (!tokens?.length) return tokens;
             try {
-              const { URI } = require("vscode-uri");
               const fileName = instance.provide["typescript/documentFileName"](URI.parse(document.uri));
               mark(ts, instance.provide["typescript/languageService"](), fileName, document, legend, tokens);
             } catch (e) {
