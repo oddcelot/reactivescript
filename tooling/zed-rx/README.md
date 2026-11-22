@@ -59,17 +59,6 @@ and see `</div>` appear; a `/** */` comment and a `//` comment keep their own
 colours; `css` and `styled` templates are highlighted as CSS; the outline lists
 components, sources and equations.
 
-## Tasks
-
-The extension adds two tasks, offered in **task: spawn** while a `.rx` file is
-active: `rx-tsc: type-check project` and its `--watch` variant. Each runs
-`npx --no-install rx-tsc --noEmit` in the worktree root. The extension's own
-copy of the server is not on the project's path, so the project needs
-`@reactivescript/language-server` in its `devDependencies` (`--no-install`
-fails instead of fetching anything) and a `tsconfig.json` whose `include`
-names the `.rx` files. See
-[Type-checking from the command line](../rx-language-server/README.md#type-checking-from-the-command-line).
-
 ## Settings
 
 All under `lsp.rx-language-server` in Zed's `settings.json`:
@@ -124,3 +113,22 @@ default:
 ```json
 { "languages": { "ReactiveScript": { "semantic_tokens": "combined" } } }
 ```
+
+## Tasks
+
+The extension adds two tasks, offered in **task: spawn** while a `.rx` file is
+active: `rx-tsc: type-check project` and its `--watch` variant. Each runs
+`npx --no rx-tsc --noEmit` in the worktree root. `--no` installs nothing;
+without the package, npm reports a 404 for `rx-tsc`.
+
+Requirements:
+
+- `node` and `npx` on the `PATH` (tasks do not use Zed's Node).
+- `@reactivescript/language-server` installed in the project, so that
+  `node_modules/.bin/rx-tsc` exists at the worktree root. The extension's own
+  copy is not on the project's path. Yarn PnP, and a package that only lives
+  in a sub-package of a monorepo, are not covered.
+- A `tsconfig.json` whose `include` names the `.rx` files.
+
+See
+[Type-checking from the command line](../rx-language-server/README.md#type-checking-from-the-command-line).
