@@ -37,7 +37,8 @@ node bin/server.js --stdio
 
 `initializationOptions: { typescript: { tsdk } }` picks TypeScript's `lib`
 folder; without it, the server uses the nearest `node_modules/typescript` at or
-above a workspace folder, else its own `typescript`.
+above a workspace folder, up to the repository root (the folder with `.git`),
+else its own `typescript`.
 
 ## Type-checking from the command line
 
