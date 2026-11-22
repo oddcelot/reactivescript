@@ -1,13 +1,15 @@
 # The Zed extension (tooling/zed-rx): the extension builds for the target Zed loads, and its queries run on the
 # grammar extension.toml pins. A query naming a node that grammar does not have stops Zed loading the language.
+# On main, the pin must also be the grammar in the tree; a pull request that changes the grammar only gets a
+# warning, since the commit to pin is the one its merge makes.
 name: zed
 
 on:
   push:
     branches: [main]
-    paths: ["tooling/zed-rx/**", "examples/*.rx", ".github/workflows/zed.yml"]
+    paths: ["tooling/zed-rx/**", "tooling/tree-sitter-rx/**", "examples/*.rx", ".github/workflows/zed.yml"]
   pull_request:
-    paths: ["tooling/zed-rx/**", "examples/*.rx", ".github/workflows/zed.yml"]
+    paths: ["tooling/zed-rx/**", "tooling/tree-sitter-rx/**", "examples/*.rx", ".github/workflows/zed.yml"]
   workflow_dispatch:
 
 jobs:
@@ -18,6 +20,14 @@ jobs:
         working-directory: tooling/zed-rx
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # check-pin.sh compares trees and names the last commit to touch the grammar
+      - name: Pin is current
+        run: |
+          ./check-pin.sh || {
+            [ "${{ github.event_name }}" = pull_request ] &&
+              echo "::warning::the grammar changed: bump rev in tooling/zed-rx/extension.toml once this is merged"
+          }
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-wasip2
