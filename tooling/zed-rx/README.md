@@ -14,7 +14,9 @@ with Zed's Node over stdio.
 The project needs a `tsconfig.json` with Solid's JSX (`"jsx": "preserve"`,
 `"jsxImportSource": "@solidjs/web"`) and `@solidjs/web` in its `node_modules`;
 the server writes the projection's prelude to `node_modules/.reactivescript/`.
-It uses the worktree's `node_modules/typescript`, else its own TypeScript.
+It uses the worktree's `node_modules/typescript`, else the nearest one above the
+worktree, up to the repository root (a server newer than 0.3.1 looks), else the
+server's own TypeScript.
 
 ## Installing as a dev extension
 
@@ -79,8 +81,9 @@ All under `lsp.rx-language-server` in Zed's `settings.json`:
 - `settings.rxc.path`: an `rxc` binary for the server to run per request
   instead of its bundled WebAssembly build (sets `RXC`).
 - `settings.typescript.tsdk`: TypeScript's `lib` folder. Unset: the worktree's
-  `node_modules/typescript/lib` if there is one (the worktree root only, not a
-  parent workspace's), else the server's own.
+  `node_modules/typescript/lib` if there is one, else the nearest one above the
+  worktree, up to the repository root, such as a hoisted workspace's (the server
+  looks, from the release after 0.3.1), else the server's own.
 - `initialization_options`: merged over what the extension sends
   (`{ "typescript": { "tsdk": … } }`).
 

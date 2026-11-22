@@ -8,7 +8,8 @@
 //! Settings, under `lsp.rx-language-server`:
 //! - `settings.rxc.path`: an `rxc` binary the server runs instead of its bundled WebAssembly build (`RXC`).
 //! - `settings.typescript.tsdk`: TypeScript's `lib` folder. Default: the worktree's
-//!   `node_modules/typescript/lib`, else the server's own TypeScript.
+//!   `node_modules/typescript/lib`, else the server looks above the worktree up to the repository root (from the
+//!   release after 0.3.1), else its own TypeScript.
 //! - `initialization_options`: merged over what this extension sends.
 
 use zed_extension_api::{
