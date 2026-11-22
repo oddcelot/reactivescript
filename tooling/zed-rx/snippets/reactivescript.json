@@ -41,7 +41,7 @@
   },
   "if": {
     "prefix": "if",
-    "body": ["{if ${1:cond} {", "\t$0", "} else {", "\t", "}}"],
-    "description": "Markup conditional"
+    "body": ["{if ${1:cond} {", "\t$0", "} else {", "\t$2", "}}"],
+    "description": "Conditional inside markup; in code, write if (c) { … }"
   }
 }
