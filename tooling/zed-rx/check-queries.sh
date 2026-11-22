@@ -29,9 +29,15 @@ else
   echo "grammar: $GRAMMAR"
 fi
 
+# A config of our own, so tree-sitter does not read the user's and does not warn that no parser directories are
+# configured. The folder it names stays empty: the grammar is the current directory.
+mkdir -p "$here/target/tree-sitter/parsers"
+config="$here/target/tree-sitter/config.json"
+printf '{ "parser-directories": ["%s"] }\n' "$here/target/tree-sitter/parsers" > "$config"
+
 cd "$GRAMMAR"
 pnpm install --frozen-lockfile --silent
 for query in "$here"/languages/reactivescript/*.scm; do
   echo "$(basename "$query")"
-  pnpm exec tree-sitter query "$query" "$here"/../../examples/*.rx > /dev/null
+  pnpm exec tree-sitter query --config-path "$config" "$query" "$here"/../../examples/*.rx > /dev/null
 done
