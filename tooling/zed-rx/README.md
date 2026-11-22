@@ -42,11 +42,13 @@ node the grammar does not have stops Zed loading the language at all, and Zed
 only says so in its log. For a grammar change that is not pinned yet, check
 against the working tree: `GRAMMAR=../tree-sitter-rx ./check-queries.sh`.
 
-`check-pin.sh` fails when `tooling/tree-sitter-rx` differs from what `rev` has,
-since Zed only picks up a grammar change once `rev` is bumped; it names the
-commit to bump to. On a pull request CI only warns, since the commit to pin is
-the one the merge makes; on `main` it fails. CI runs all five
-(`.github/workflows/zed.yml`).
+`check-pin.sh` compares `tooling/tree-sitter-rx` at HEAD (committed changes)
+with the tree at `rev`, since Zed only picks up a grammar change once `rev` is
+bumped. Exit 1: they differ; exit 2: the check could not run (bad `rev`, fetch
+failed). A difference only warns on a pull request, since the commit to pin is
+the one the merge makes: bump `rev` to it in a follow-up. On `main` a
+difference fails, and so does a check that could not run. CI runs all five,
+the pin check last (`.github/workflows/zed.yml`).
 
 Then in Zed:
 
