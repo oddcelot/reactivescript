@@ -38,7 +38,7 @@ const hoverText = h => !h ? "" : typeof h.contents === "string" ? h.contents : A
 (async () => {
   // SERVER: another build of it, such as the extension's bundle (tooling/vscode-rx/dist/server.js)
   const server = startLanguageServer(process.env.SERVER ? path.resolve(process.env.SERVER) : path.join(__dirname, "../bin/server.js"), ws);
-  await server.initialize(URI.file(ws).toString(), { typescript: { tsdk: path.dirname(require.resolve("typescript")) } });
+  const initialized = await server.initialize(URI.file(ws).toString(), { typescript: { tsdk: path.dirname(require.resolve("typescript")) } });
   const cartFile = path.join(ws, "cart.rx");
   const cart = await server.openTextDocument(cartFile, "reactivescript");
   const text = cart.getText();
@@ -62,6 +62,32 @@ const hoverText = h => !h ? "" : typeof h.contents === "string" ? h.contents : A
   console.log("references and rename");
   const refs = await server.sendReferencesRequest(cart.uri, at(text, "export count", 8), { includeDeclaration: true });
   check("`count` is referenced in cart.rx and beyond", (refs ?? []).length >= 3, refs?.map(r => `${path.basename(r.uri)}:${r.range.start.line + 1}`));
+
+  console.log("semantic tokens");
+  const legend = initialized.capabilities.semanticTokensProvider.legend;
+  const st = (await server.sendSemanticTokensRequest(cart.uri))?.data ?? [];
+  /** The modifiers of the token at a position, or null where there is none. */
+  const modifiersAt = ({ line, character }) => {
+    for (let i = 0, l = 0, c = 0; i < st.length; i += 5) {
+      l += st[i]; c = st[i] ? st[i + 1] : c + st[i + 1];
+      if (l === line && c === character) return legend.tokenModifiers.filter((_, bit) => st[i + 4] & (1 << bit));
+    }
+    return null;
+  };
+  const m1 = modifiersAt(at(text, "export source cart", 14));
+  check("a source's declaration is `source`", m1?.includes("source") && !m1.includes("equation"), m1);
+  const m2 = modifiersAt(at(text, "count = cart.reduce", 8));
+  check("a read of a source is `source`", m2?.includes("source"), m2);
+  const m3 = modifiersAt(at(text, "export count", 7));
+  check("an equation's declaration is `equation`", m3?.includes("equation") && !m3.includes("source"), m3);
+  const m4 = modifiersAt(at(text, "if (count === 0)", 4));
+  check("a read of an equation is `equation`", m4?.includes("equation"), m4);
+  const m5 = modifiersAt(at(text, "products.reduce"));
+  check("a source imported from catalog.rx is `source`", m5?.includes("source"), m5);
+  const m6 = modifiersAt(at(text, "cart := ls"));
+  check("a write's target is `source`", m6?.includes("source"), m6);
+  const m7 = modifiersAt(at(text, "let items = cart", 4));
+  check("a handler's local is neither", m7 && !m7.includes("source") && !m7.includes("equation"), m7);
 
   console.log("completion while typing");
   const lines = text.split("\n"); const end = { line: lines.length - 1, character: lines[lines.length - 1].length };

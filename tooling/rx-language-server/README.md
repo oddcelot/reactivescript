@@ -14,6 +14,12 @@ errors, else the checker's, each with its rule) are a second service.
   projection's prelude to `node_modules/.reactivescript/prelude.d.ts`.
 - `src/index.js` is the language plugin (exact mappings carry every feature;
   ranges only place type errors) and the diagnostics service.
+- `src/tokens.js` marks TypeScript's semantic tokens with what the projection
+  hides: a source and an equation are both a `const` there, so both come back
+  as `variable` with `readonly`. A source's name gets the modifier `source` and
+  an equation's `equation`, wherever it is read or written, also in a module
+  that imports it. An editor maps the two to colours of its own (Zed:
+  `semantic_token_rules`; VS Code: `semanticTokenScopes`).
 - `bin/server.js` is the server, over stdio or IPC.
 
 The project needs a `tsconfig.json` with Solid's JSX (`"jsx": "preserve"`,
