@@ -1,0 +1,12 @@
+[
+  {
+    "token_type": "variable",
+    "token_modifiers": ["source"],
+    "style": ["variable.special"]
+  },
+  {
+    "token_type": "variable",
+    "token_modifiers": ["equation"],
+    "style": ["constant"]
+  }
+]

@@ -113,3 +113,12 @@ default:
 ```json
 { "languages": { "ReactiveScript": { "semantic_tokens": "combined" } } }
 ```
+
+Zed draws a semantic token over the grammar's colour. TypeScript calls a source
+and an equation both a read-only variable, so the server marks them `source`
+and `equation`, and `languages/reactivescript/semantic_token_rules.json` gives
+those the colours `highlights.scm` gives their declarations: a source is
+`variable.special`, an equation `constant`. With them on, every read of a
+source or an equation has its colour, not only its declaration and its writes.
+A server that does not mark them (0.3.1 and earlier) shows both as TypeScript's
+read-only variable.
