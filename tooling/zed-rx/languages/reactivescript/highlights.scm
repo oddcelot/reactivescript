@@ -75,6 +75,7 @@
 (optional_parameter
   pattern: (identifier) @variable.parameter)
 
+; A destructured parameter: `{ a, b = 1, c: d }` and `[a, b = 1]`
 (required_parameter
   pattern: (object_pattern
     [
@@ -83,6 +84,32 @@
         left: (shorthand_property_identifier_pattern) @variable.parameter)
       (pair_pattern
         value: (identifier) @variable.parameter)
+    ]))
+
+(optional_parameter
+  pattern: (object_pattern
+    [
+      (shorthand_property_identifier_pattern) @variable.parameter
+      (object_assignment_pattern
+        left: (shorthand_property_identifier_pattern) @variable.parameter)
+      (pair_pattern
+        value: (identifier) @variable.parameter)
+    ]))
+
+(required_parameter
+  pattern: (array_pattern
+    [
+      (identifier) @variable.parameter
+      (assignment_pattern
+        left: (identifier) @variable.parameter)
+    ]))
+
+(optional_parameter
+  pattern: (array_pattern
+    [
+      (identifier) @variable.parameter
+      (assignment_pattern
+        left: (identifier) @variable.parameter)
     ]))
 
 (arrow_function
@@ -104,8 +131,9 @@
 
 (comment) @comment
 
+; As injections.scm: `/**/` and a `/***` banner are plain comments
 ((comment) @comment.doc
-  (#match? @comment.doc "^/\\*\\*"))
+  (#match? @comment.doc "^/\\*\\*[^*/]"))
 
 (string) @string
 (template_string) @string
@@ -306,7 +334,8 @@
 
 ; ============================================================ ReactiveScript declarations
 
-; A source is state: its name, and the root of every write or guess, stand out
+; A source is state: its name, and the root of every write or guess, stand out. A query cannot recurse, so the root
+; is found up to four members deep (`a.b.c.d.e := …`); a deeper target's root stays a plain variable.
 (source_declaration
   name: (identifier) @variable.special)
 
@@ -316,6 +345,7 @@
     (_ object: (identifier) @variable.special)
     (_ object: (_ object: (identifier) @variable.special))
     (_ object: (_ object: (_ object: (identifier) @variable.special)))
+    (_ object: (_ object: (_ object: (_ object: (identifier) @variable.special))))
   ])
 
 (guess_statement
@@ -324,6 +354,7 @@
     (_ object: (identifier) @variable.special)
     (_ object: (_ object: (identifier) @variable.special))
     (_ object: (_ object: (_ object: (identifier) @variable.special)))
+    (_ object: (_ object: (_ object: (_ object: (identifier) @variable.special))))
   ])
 
 (refresh_statement
