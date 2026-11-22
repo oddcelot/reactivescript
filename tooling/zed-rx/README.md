@@ -33,14 +33,22 @@ cargo fmt --check
 cargo clippy --release --target wasm32-wasip2 -- -D warnings
 cargo build --release --target wasm32-wasip2   # rustup target add wasm32-wasip2
 ./check-queries.sh                             # needs pnpm
+./check-pin.sh
 ```
 
 `check-queries.sh` runs every query in `languages/reactivescript` over
 `examples/*.rx`, on the grammar `extension.toml` pins. A query that names a
 node the grammar does not have stops Zed loading the language at all, and Zed
 only says so in its log. For a grammar change that is not pinned yet, check
-against the working tree: `GRAMMAR=../tree-sitter-rx ./check-queries.sh`. CI
-runs all four (`.github/workflows/zed.yml`).
+against the working tree: `GRAMMAR=../tree-sitter-rx ./check-queries.sh`.
+
+`check-pin.sh` compares `tooling/tree-sitter-rx` at HEAD (committed changes)
+with the tree at `rev`, since Zed only picks up a grammar change once `rev` is
+bumped. Exit 1: they differ; exit 2: the check could not run (bad `rev`, fetch
+failed). A difference only warns on a pull request, since the commit to pin is
+the one the merge makes: bump `rev` to it in a follow-up. On `main` a
+difference fails, and so does a check that could not run. CI runs all five,
+the pin check last (`.github/workflows/zed.yml`).
 
 Then in Zed:
 
