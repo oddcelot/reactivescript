@@ -5,6 +5,7 @@ schema_version = 1
 authors = ["Ryan Carniato"]
 description = "ReactiveScript (.rx, .d.rx): highlighting, and TypeScript's types, hover, go to definition, completion and errors through the .rx language server."
 repository = "https://github.com/solidjs/reactivescript"
+snippets = ["./snippets/reactivescript.json"]
 
 [language_servers.rx-language-server]
 name = "ReactiveScript Language Server"

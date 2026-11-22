@@ -5,7 +5,9 @@ Highlighting for `.rx` and `.d.rx` from a Tree-sitter grammar
 ([`../rx-language-server`](../rx-language-server)), TypeScript's hover, go to
 definition, references, rename, completion and type errors, plus the
 compiler's own diagnostics. ` ```rx ` and ` ```reactivescript ` blocks in
-Markdown use the same language.
+Markdown use the same language. Snippets (`source`, `sourceq`, `action`,
+`component`, `app`, `effect`, `fn`, `for`, `if`) are in
+`snippets/reactivescript.json`.
 
 The extension installs `@reactivescript/language-server` from npm (and updates it
 when a newer release exists; offline it keeps the installed copy) and runs it

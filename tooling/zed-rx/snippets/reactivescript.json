@@ -1,0 +1,47 @@
+{
+  "source": {
+    "prefix": "source",
+    "body": "source ${1:name}: ${2:number} := ${3:0}",
+    "description": "State, written with :="
+  },
+  "source (question)": {
+    "prefix": "sourceq",
+    "body": "source ${1:user} = await ${2:fetchUser}(${3:id})",
+    "description": "State with a question, re-asked when its inputs change"
+  },
+  "action": {
+    "prefix": "action",
+    "body": ["action ${1:save}(${2}) {", "\t$0", "}"],
+    "description": "Action: writes and awaits"
+  },
+  "component": {
+    "prefix": "component",
+    "body": ["component ${1:Item}(props: { ${2:title}: ${3:string} }) {", "\t<${4:div}>$0</${4:div}>", "}"],
+    "description": "Component"
+  },
+  "export default component": {
+    "prefix": "app",
+    "body": ["export default component ${1:App}() {", "\t<${2:main}>$0</${2:main}>", "}"],
+    "description": "Entry module's default component"
+  },
+  "effect": {
+    "prefix": "effect",
+    "body": ["effect (${1:count}) {", "\t$0", "}"],
+    "description": "Runs after the listed values change; $0, $1 are their values"
+  },
+  "fn": {
+    "prefix": "fn",
+    "body": "fn ${1:area}(${2:w}: ${3:number}, ${4:h}: ${5:number}): ${6:number} => ${7:w * h}",
+    "description": "Pure function"
+  },
+  "for": {
+    "prefix": "for",
+    "body": ["{for ${1:it} in ${2:items} {", "\t$0", "}}"],
+    "description": "Markup loop"
+  },
+  "if": {
+    "prefix": "if",
+    "body": ["{if ${1:cond} {", "\t$0", "} else {", "\t", "}}"],
+    "description": "Markup conditional"
+  }
+}
