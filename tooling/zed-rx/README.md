@@ -24,6 +24,41 @@ fetches and compiles the grammar named in `extension.toml`. For local work,
 point `[grammars.rx]`'s `repository` at a checkout with the grammar committed
 (`file:///path/to/reactivescript`) and `rev` at that commit.
 
+## Working on the extension
+
+Before opening Zed, from this folder:
+
+```sh
+cargo fmt --check
+cargo clippy --release --target wasm32-wasip2 -- -D warnings
+cargo build --release --target wasm32-wasip2   # rustup target add wasm32-wasip2
+./check-queries.sh                             # needs pnpm
+```
+
+`check-queries.sh` runs every query in `languages/reactivescript` over
+`examples/*.rx`, on the grammar `extension.toml` pins. A query that names a
+node the grammar does not have stops Zed loading the language at all, and Zed
+only says so in its log. For a grammar change that is not pinned yet, check
+against the working tree: `GRAMMAR=../tree-sitter-rx ./check-queries.sh`. CI
+runs all four (`.github/workflows/zed.yml`).
+
+Then in Zed:
+
+- After a change, press **Rebuild** on the extension's row in
+  **zed: extensions**. Queries and `config.toml` are read again, and
+  `src/lib.rs` is recompiled.
+- **zed: open log** shows a query or grammar that failed to load, and a failed
+  npm install. `zed --foreground` from a terminal prints more.
+- **dev: open language server logs** shows how the server was started (its
+  command, arguments and `RXC`) and what it printed.
+- **dev: open syntax tree view** shows the node under the cursor, which is what
+  a query pattern has to name.
+
+Worth trying by hand, since no check covers them: type `<div>` in a component
+and see `</div>` appear; a `/** */` comment and a `//` comment keep their own
+colours; `css` and `styled` templates are highlighted as CSS; the outline lists
+components, sources and equations.
+
 ## Settings
 
 All under `lsp.rx-language-server` in Zed's `settings.json`:
